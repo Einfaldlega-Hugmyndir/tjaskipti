@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="is">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="A webpage to get Icelandic text-to-speech">
+    <title>Tjáskipti - Talgervill</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+      /* Move down content because we have a fixed navbar that is 3.5rem tall */
+      body {
+        padding-top: 5.5rem;
+      }
+
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+      <a class="navbar-brand" href="index.html">AAC</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    
+      <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">Heim</a>
+          </li>
+          <li class="nav-item active">
+            <a class="nav-link" href="talgervill.html">Talgervill<span class="sr-only">(current)</span></a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <main role="main" class="container">
+      <div class="starter-template">
+        <h1>Talgervill</h1>
+        <form id="TTSform" action="tts.html" method="post" onSubmit="someFunction(); return false;"> 
+          <select name="Voices" id="Voices" class="custom-select">
+            <option selected>Rödd</option>
+            <option value="Dilja">Dilja</option>
+            <option value="Alfur">Álfur</option>
+            <option value="Karl" hidden>Karl</option>
+            <option value="Dora" hidden>Dora</option>
+          </select>
+          <div class="form-group">
+            <label for="exampleFormControlTextarea1">Texti (500 stafir)</label>
+              <textarea name="TTS" class="form-control" id="exampleFormControlTextarea1" maxlength="500"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Gera hljóðskrá</button>
+        </form>
+      </div>
+      <div>
+        <audio id="generatedSpeech" controls>Vafran þín nota ekki audio element. Þessi skul vera huld þegar enginn hljóðskrá er hér.</audio>
+      </div>
+    </main>
+    
+    <footer class="container">
+      <p>&copy; Judy Fong 2022</p>
+    </footer>
+    <script>
+
+        function getAudio(webText, myVoice) {
+            const url = 'https://tts.tiro.is/v0/speech';
+            // TODO: add loading icon where the audio player is while waiting
+            // for response from Tiro
+            fetch(url, {
+              method: 'POST',
+              mode: 'cors',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                Engine: 'standard',
+                LanguageCode: 'is-IS',
+                LexiconNames: [],
+                OutputFormat: 'mp3',
+                SampleRate: '22050',
+                SpeechMarkTypes: [],
+                Text: webText,
+                TextType: 'text',
+                VoiceId: myVoice,
+              }),
+            })
+                .then((result) => {
+                  if (!result.ok) {
+                    throw new Error('Network did not respond with audio file');
+                  }
+                  return result.blob();
+                })
+                .then((audStream) => {
+                  const blobURL = window.URL.createObjectURL(audStream);
+                  document.getElementById('generatedSpeech').src = blobURL;    
+                })
+                .catch((error) => {
+                  console.error('No audio received from the tts web service: ', error);
+                  return '';
+                });
+        }
+
+        function validate() {
+          chosenVoice = document.getElementById("TTSform").Voices.value;
+          // TODO: get the page to render properly so Alfur's voice can be submitted too
+          switch (chosenVoice) {
+            case 'Dilja':
+                break;
+            case 'Alfur':
+                break;
+            default:
+                chosenVoice = 'Alfur';
+          }
+          let selected = document.querySelector('#Voices');
+          let text2convert = document.getElementById("TTSform").TTS.value.trim();
+          // Keep the form values on the page after submitting
+          selected.value = chosenVoice; 
+          document.getElementById('TTSform').TTS.value = text2convert;
+          if (text2convert) {
+            console.log('submit to tiro and wait');
+            //Submit to tiro and wait for mp3
+            getAudio(text2convert, chosenVoice);
+          } else {
+            console.log('no text so nothing to do');
+          }
+        }
+
+        function someFunction() {
+            validate();
+            return false;
+        }
+
+        console.log('got here');
+    </script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+  </body>
+</html>
